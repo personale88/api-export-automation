@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Aggregated Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-chart-pie me-2"></i>Global Campaign Outreach Performance</span>
+                <a href="/download-report" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-download me-1"></i>Download CSV Report</a>
+            </div>
+            <div class="card-body">
+                <div class="row text-center align-items-center">
+                    <div class="col-md-3 border-end">
+                        <h6 class="text-muted text-uppercase mb-1">Total Emails Queued</h6>
+                        <h3 class="display-6 fw-bold text-dark">{{ global_stats.total }}</h3>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <h6 class="text-muted text-uppercase mb-1">Successful Deliveries</h6>
+                        <h3 class="display-6 fw-bold text-success">{{ global_stats.success }}</h3>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <h6 class="text-muted text-uppercase mb-1">Failed Attempts</h6>
+                        <h3 class="display-6 fw-bold text-danger">{{ global_stats.failed }}</h3>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted text-uppercase mb-1">Global Success Rate</h6>
+                        <h3 class="display-6 fw-bold {% if global_stats.success_rate >= 80 %}text-success{% else %}text-warning{% endif %}">
+                            {{ global_stats.success_rate }}%
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Last Campaign Run Details -->
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white"><i class="fa-solid fa-square-poll-vertical me-2 text-primary"></i>Most Recent Campaign Run</div>
+            <div class="card-body">
+                {% if last_run.total > 0 %}
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Campaign Focus:
+                            <span class="fw-bold">{{ last_run.campaign_name }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Recipients Targeted:
+                            <span class="badge bg-secondary rounded-pill">{{ last_run.total }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Delivered/Simulated:
+                            <span class="badge bg-success rounded-pill">{{ last_run.success }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Failed Sends:
+                            <span class="badge bg-danger rounded-pill">{{ last_run.failed }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            Run Success Rate:
+                            <span class="fw-bold {% if last_run.success_rate >= 85 %}text-success{% else %}text-warning{% endif %}">{{ last_run.success_rate }}%</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="alert alert-secondary small mb-0">
+                        <strong>Pipeline Insight:</strong> This run reflects the last consecutive batch of emails sent in a single campaign trigger.
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-chart-bar display-6 mb-2 d-block"></i>
+                        No campaign runs recorded yet. Get started in the Campaign tab!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Send Activity Log -->
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Outbox Send History</div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover table-striped mb-0 table-sm align-middle">
+                        <thead class="table-light x-small text-uppercase">
+                            <tr>
+                                <th>Recipient</th>
+                                <th>Status</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small font-monospace">
+                            {% if global_stats.recent_sends %}
+                                {% for item in global_stats.recent_sends|reverse %}
+                                <tr>
+                                    <td>{{ item.email_address }}</td>
+                                    <td>
+                                        {% if item.status == 'sent' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fa-solid fa-paper-plane me-1"></i>Sent</span>
+                                        {% elif item.status == 'simulated' %}
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><i class="fa-solid fa-laptop me-1"></i>Simulated</span>
+                                        {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-circle-xmark me-1"></i>Failed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="text-muted text-nowrap">{{ item.timestamp }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted small font-sans-serif">
+                                        Outbox history is empty.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

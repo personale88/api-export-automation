@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+
+        <!-- Send Mode Banner -->
+        {% if smtp_configured %}
+        <div class="alert alert-success d-flex align-items-center mb-4 shadow-sm">
+            <i class="fa-solid fa-circle-check fs-4 text-success me-3" aria-hidden="true"></i>
+            <div>
+                <strong>Gmail SMTP Connected:</strong> Ready to send real outreach emails from <code>{{ gmail_email }}</code> with PDF presentation attached.
+            </div>
+        </div>
+        {% elif oauth_configured %}
+        <div class="alert alert-success d-flex align-items-center mb-4 shadow-sm">
+            <i class="fa-solid fa-circle-check fs-4 text-success me-3" aria-hidden="true"></i>
+            <div>
+                <strong>Gmail API (OAuth2) Active:</strong> Campaign emails will be sent via Google API.
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-warning d-flex align-items-center mb-4 shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation fs-4 text-warning me-3" aria-hidden="true"></i>
+            <div>
+                <strong>Simulation Mode:</strong> Configure your Gmail App Password in <a href="/settings" class="alert-link">Settings</a> to send real emails to your mail ID.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick 1-Click Test Send Card (For Screenshot Proof!) -->
+        <div class="card shadow-sm border-primary mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-vial-circle-check me-2" aria-hidden="true"></i>Quick Test Send to Your Mail ID (For Screenshot Proof)</span>
+                <span class="badge bg-light text-primary">Instant Test</span>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">
+                    Send an immediate test email with the <strong>company presentation PDF</strong> attached directly to your email address. You can open Gmail, verify the email received, and take the screenshots required for submission!
+                </p>
+                <form action="/quick-test-send" method="POST">
+                    <div class="input-group mb-2">
+                        <span class="input-group-text"><i class="fa-solid fa-envelope" aria-hidden="true"></i></span>
+                        <input type="email" name="test_recipient" class="form-control font-monospace" value="{{ gmail_email }}" placeholder="Enter recipient email" required>
+                        <button type="submit" class="btn btn-success px-4" id="btnQuickTest">
+                            <i class="fa-solid fa-paper-plane me-1" aria-hidden="true"></i> Send Test to My Email
+                        </button>
+                    </div>
+                    <div class="form-text x-small text-muted">
+                        Sends via secure Gmail SSL SMTP to verify deliverability and catalog packaging.
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Full Campaign Send Card -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white"><i class="fa-solid fa-paper-plane me-2 text-primary" aria-hidden="true"></i>Launch Outreach Campaign</div>
+            <div class="card-body">
+                
+                <form id="campaignForm" action="/run-send" method="POST" enctype="multipart/form-data">
+                    
+                    <!-- Target Audience -->
+                    <div class="mb-3">
+                        <label for="audience" class="form-label fw-bold small">Target Audience Segment:</label>
+                        <select class="form-select" id="audience" name="audience" required>
+                            <option value="business" selected>Business Accounts Only (Recommended - {{ biz_count }} contacts)</option>
+                            <option value="individual">Individual Accounts Only ({{ ind_count }} contacts)</option>
+                            <option value="all">All Available Valid Contacts ({{ buyer_count }} contacts)</option>
+                        </select>
+                        <div class="form-text x-small text-muted">
+                            Targeting business accounts ensures higher conversion and compliance with export marketing best practices.
+                        </div>
+                    </div>
+                    
+                    <!-- File Attachment Upload -->
+                    <div class="mb-3">
+                        <label for="pdf_file" class="form-label fw-bold small">Product Catalog PDF Attachment:</label>
+                        <input class="form-control form-control-sm" type="file" id="pdf_file" name="pdf_file" accept=".pdf">
+                        <div class="form-text x-small text-muted">
+                            {% if attachment_present %}
+                            <span class="text-success"><i class="fa-solid fa-file-pdf me-1"></i> Current Presentation: <code>company_presentation.pdf</code> is loaded.</span> Uploading a file here replaces it.
+                            {% else %}
+                            <span class="text-warning"><i class="fa-solid fa-triangle-exclamation me-1"></i> No catalog loaded.</span> Upload a PDF here to send as attachment.
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Email Subject Template -->
+                    <div class="mb-3">
+                        <label for="subject" class="form-label fw-bold small">Outreach Subject Template:</label>
+                        <input type="text" class="form-control font-monospace text-dark" id="subject" name="subject" value="{{ default_subject }}" required>
+                        <div class="form-text x-small text-muted">
+                            Supported tags: <code>{company_name}</code>, <code>{buyer_name}</code>
+                        </div>
+                    </div>
+
+                    <!-- Email Body Template -->
+                    <div class="mb-3">
+                        <label for="body" class="form-label fw-bold small">Email Body Template:</label>
+                        <textarea class="form-control font-monospace text-dark" id="body" name="body" rows="9" required>{{ default_body }}</textarea>
+                        <div class="form-text x-small text-muted">
+                            Supported tags: <code>{buyer_name}</code>, <code>{company_name}</code>, <code>{source_platform}</code>
+                        </div>
+                    </div>
+                    
+                    <!-- Limits & Delays Info -->
+                    <div class="row bg-light rounded p-3 mb-4 mx-0 border">
+                        <div class="col-sm-6 small">
+                            <i class="fa-solid fa-clock text-info me-1"></i>
+                            <strong>Throttle Interval:</strong> {{ send_delay }} seconds
+                        </div>
+                        <div class="col-sm-6 small">
+                            <i class="fa-solid fa-shield text-info me-1"></i>
+                            <strong>Daily Sending Cap:</strong> {{ daily_limit }} recipients
+                        </div>
+                        <div class="col-12 mt-2 border-top pt-2 x-small text-muted">
+                            <i class="fa-solid fa-gavel me-1"></i> Compliance footer appended: Business address (<strong>{{ physical_address }}</strong>) and automated Unsubscribe mailto link.
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitBtn" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <span id="btnText"><i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Send Campaign Outreach</span>
+                        <span id="btnSpinner" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                        <span id="btnSpinnerText" style="display: none;">Sending Outreach Emails (Applying Delays)...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('campaignForm').addEventListener('submit', function() {
+    document.getElementById('btnText').style.display = 'none';
+    document.getElementById('btnSpinner').style.display = 'inline-block';
+    document.getElementById('btnSpinnerText').style.display = 'inline-block';
+    document.getElementById('submitBtn').disabled = true;
+});
+</script>
+{% endblock %}

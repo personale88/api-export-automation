@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fa-solid fa-brain me-2"></i>Gemini AI Email Classification Module</div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <p class="text-muted mb-0">
+                            Downstream outreaches are tailored by contact segments. This module deduplicates leads and uses the <strong>Gemini AI API</strong> (or rule-based heuristics if offline) to batch-classify emails into corporate domains (<strong>Business</strong>) or general public domains (<strong>Individual</strong>).
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <form action="/run-classify" method="POST">
+                            <button type="submit" class="btn btn-warning w-100"><i class="fa-solid fa-bolt me-2"></i>Trigger AI Classification</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Business Leads List -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-building me-2"></i>Business Accounts</span>
+                <span class="badge bg-white text-success font-monospace">{{ biz_emails|length }} emails</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover table-striped mb-0 table-sm align-middle">
+                        <thead class="table-light x-small text-uppercase">
+                            <tr>
+                                <th>Email Address</th>
+                                <th>Classification Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small font-monospace">
+                            {% if biz_emails %}
+                                {% for email in biz_emails %}
+                                <tr>
+                                    <td>{{ email }}</td>
+                                    <td><span class="text-muted small">Auto-Classified</span></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-center py-4 text-muted small">
+                                        No business contacts identified. Run classification!
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Individual Leads List -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-user me-2"></i>Individual Accounts</span>
+                <span class="badge bg-white text-warning font-monospace">{{ ind_emails|length }} emails</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover table-striped mb-0 table-sm align-middle">
+                        <thead class="table-light x-small text-uppercase">
+                            <tr>
+                                <th>Email Address</th>
+                                <th>Classification Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small font-monospace">
+                            {% if ind_emails %}
+                                {% for email in ind_emails %}
+                                <tr>
+                                    <td>{{ email }}</td>
+                                    <td><span class="text-muted small">Auto-Classified</span></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-center py-4 text-muted small">
+                                        No individual contacts identified. Run classification!
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

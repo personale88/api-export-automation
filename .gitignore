@@ -1,0 +1,31 @@
+# Environment and Credentials
+.env
+token.json
+credentials.json
+
+# Python local artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+
+# Data and Logs
+data/*.csv
+!data/.gitkeep
+data/settings.json
+data/*.log
+*.log
+
+# Editor configurations
+.vscode/
+.idea/
+
+# Scratch & Temporary
+scratch_script.html
+pdf_page_*.png
+

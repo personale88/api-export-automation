@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <!-- Database statistics -->
+        <div class="card">
+            <div class="card-header"><i class="fa-solid fa-database me-2"></i>Local Database Statistics</div>
+            <div class="card-body">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead>
+                        <tr class="table-light small">
+                            <th>Metric / Database File</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody class="small font-monospace">
+                        <tr>
+                            <td>Total Lead Records (buyers.csv)</td>
+                            <td>{{ db_stats.row_count }} records</td>
+                        </tr>
+                        <tr>
+                            <td>File Size on Disk</td>
+                            <td>{{ db_stats.file_size_kb }} KB</td>
+                        </tr>
+                        <tr>
+                            <td>Last Discovered / Modified</td>
+                            <td>{{ db_stats.last_modified }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="alert alert-info small mb-0">
+                    <strong>Note:</strong> All discovered records are stored in a flat-file CSV format at <code>data/buyers.csv</code>.
+                </div>
+            </div>
+        </div>
+
+        <!-- CSV upload form -->
+        <div class="card">
+            <div class="card-header"><i class="fa-solid fa-file-arrow-up me-2"></i>Upload Lead CSV Manually</div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    You can import existing lead sheets into the pipeline. The CSV must contain headers: <code>buyer_name, company_name, email, website, country, source_platform</code>.
+                </p>
+                <form action="/upload-csv" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="csv_file" class="form-label font-monospace">Select CSV Lead File:</label>
+                        <input class="form-control form-control-sm" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fa-solid fa-upload me-2"></i>Upload & Import</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Danger zone clear database -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white"><i class="fa-solid fa-triangle-exclamation me-2"></i>Danger Zone</div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    This action deletes all buyer records and classification segments. Persistent anti-spam lists (Opt-outs) will be preserved for compliance.
+                </p>
+                <form action="/clear-db" method="POST" onsubmit="return confirm('Are you sure you want to clear the entire lead database?');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm w-100"><i class="fa-solid fa-trash me-2"></i>Reset Leads & Campaigns</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unsubscribe Management -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-user-slash me-2"></i>Anti-Spam Unsubscribe List</span>
+                <span class="badge bg-danger">{{ opt_outs|length }} unsubscribed</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Any contact present on this list will be <strong>automatically skipped</strong> when campaigns are queued, ensuring compliance with anti-spam legislation.
+                </p>
+                
+                <!-- Add Unsubscribe Form -->
+                <form action="/add-optout" method="POST" class="row g-2 mb-4">
+                    <div class="col">
+                        <input type="email" class="form-control form-control-sm" name="email" placeholder="email@address.com" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-plus me-1"></i> Add Opt-Out</button>
+                    </div>
+                </form>
+                
+                <!-- Unsubscribe Table -->
+                <div class="table-responsive" style="max-height: 300px;">
+                    <table class="table table-hover table-striped mb-0 table-sm">
+                        <thead class="table-light x-small text-uppercase">
+                            <tr>
+                                <th>Email Address</th>
+                                <th>Opt-Out Date</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% if opt_outs %}
+                                {% for opt in opt_outs %}
+                                <tr>
+                                    <td class="font-monospace">{{ opt.email_address }}</td>
+                                    <td class="text-muted">{{ opt.opt_out_date.split(' ')[0] if opt.opt_out_date else 'n/a' }}</td>
+                                    <td class="text-end">
+                                        <form action="/remove-optout" method="POST" style="display:inline;">
+                                            <input type="hidden" name="email" value="{{ opt.email_address }}">
+                                            <button type="submit" class="btn btn-link btn-xs text-danger p-0" title="Remove Opt-Out">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted small">
+                                        No contacts have requested to unsubscribe.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

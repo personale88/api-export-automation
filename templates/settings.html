@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        
+        <!-- Connection Status Banner -->
+        {% if smtp_configured %}
+        <div class="alert alert-success d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-circle-check fs-4 text-success me-3"></i>
+                <div>
+                    <strong>Gmail SMTP Connected:</strong> Verified for <code>{{ settings.GMAIL_EMAIL }}</code> over SSL (Port 465). Outreach emails are sent from your official mail ID.
+                </div>
+            </div>
+            <form action="/test-smtp" method="POST" class="m-0">
+                <button type="submit" class="btn btn-sm btn-outline-success">
+                    <i class="fa-solid fa-rotate me-1"></i> Re-test SMTP
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="alert alert-warning d-flex align-items-center mb-4">
+            <i class="fa-solid fa-triangle-exclamation fs-4 text-warning me-3"></i>
+            <div>
+                <strong>Simulation Mode Active:</strong> Add your 16-character Gmail App Password below to enable real sending from your mail ID.
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white"><i class="fa-solid fa-gears me-2"></i>Configure Pipeline Settings</div>
+            <div class="card-body">
+                <form action="/save-settings" method="POST">
+                    
+                    <h5 class="border-bottom pb-2 mb-3 text-secondary"><i class="fa-solid fa-envelope me-2"></i>Gmail & Outbox Constraints (SMTP Authentication)</h5>
+                    
+                    <div class="row">
+                        <!-- Gmail account -->
+                        <div class="col-md-6 mb-3">
+                            <label for="gmail_email" class="form-label fw-bold small">Sending Gmail Address:</label>
+                            <input type="email" class="form-control font-monospace" id="gmail_email" name="GMAIL_EMAIL" value="{{ settings.GMAIL_EMAIL }}" placeholder="your-email@gmail.com" required>
+                            <div class="form-text x-small text-muted">
+                                Your Gmail account used as the sender ID for outreach.
+                            </div>
+                        </div>
+
+                        <!-- Gmail App Password -->
+                        <div class="col-md-6 mb-3">
+                            <label for="gmail_app_pass" class="form-label fw-bold small">Gmail App Password (16-letters):</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control font-monospace" id="gmail_app_pass" name="GMAIL_APP_PASSWORD" value="{{ settings.GMAIL_APP_PASSWORD }}" placeholder="abcd efgh ijkl mnop" autocomplete="current-password">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassVisibility()" aria-label="Toggle password visibility">
+                                    <i class="fa-solid fa-eye" id="eyeIcon" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <div class="form-text x-small text-muted">
+                                Generated from Google Account &rarr; Security &rarr; App Passwords.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- SMTP Host -->
+                        <div class="col-md-3 mb-3">
+                            <label for="smtp_host" class="form-label fw-bold small">SMTP Host:</label>
+                            <input type="text" class="form-control form-control-sm font-monospace" id="smtp_host" name="SMTP_HOST" value="{{ settings.SMTP_HOST }}" required>
+                        </div>
+
+                        <!-- SMTP Port -->
+                        <div class="col-md-3 mb-3">
+                            <label for="smtp_port" class="form-label fw-bold small">SMTP Port:</label>
+                            <input type="number" class="form-control form-control-sm font-monospace" id="smtp_port" name="SMTP_PORT" value="{{ settings.SMTP_PORT }}" required>
+                        </div>
+                        
+                        <!-- Daily send limit -->
+                        <div class="col-md-3 mb-3">
+                            <label for="daily_limit" class="form-label fw-bold small">Daily Send Cap:</label>
+                            <input type="number" class="form-control form-control-sm" id="daily_limit" name="DAILY_SEND_LIMIT" value="{{ settings.DAILY_SEND_LIMIT }}" min="1" max="500" required>
+                        </div>
+
+                        <!-- Send delay -->
+                        <div class="col-md-3 mb-3">
+                            <label for="send_delay" class="form-label fw-bold small">Throttle Delay (s):</label>
+                            <input type="number" class="form-control form-control-sm" id="send_delay" name="SEND_DELAY" value="{{ settings.SEND_DELAY }}" min="1" max="60" required>
+                        </div>
+                    </div>
+
+                    <h5 class="border-bottom pb-2 mb-3 mt-3 text-secondary"><i class="fa-solid fa-key me-2"></i>API Keys & Search Parameter</h5>
+                    <div class="row">
+                        <!-- Gemini API Key -->
+                        <div class="col-md-8 mb-3">
+                            <label for="gemini_key" class="form-label fw-bold small">Gemini API Key (Optional AI Classification):</label>
+                            <input type="password" class="form-control form-control-sm font-monospace" id="gemini_key" name="GEMINI_API_KEY" value="{{ settings.GEMINI_API_KEY }}" placeholder="AIzaSy..." autocomplete="off">
+                            <div class="form-text x-small text-muted">
+                                For advanced AI contact classification. Automatically falls back to intelligent domain heuristics if left blank.
+                            </div>
+                        </div>
+
+                        <!-- Search keyword -->
+                        <div class="col-md-4 mb-3">
+                            <label for="search_keyword" class="form-label fw-bold small">Target Product Keyword:</label>
+                            <input type="text" class="form-control form-control-sm font-monospace" id="search_keyword" name="SEARCH_KEYWORD" value="{{ settings.SEARCH_KEYWORD }}" required>
+                            <div class="form-text x-small text-muted">
+                                Defaults to Singing Bowls.
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="border-bottom pb-2 mb-3 mt-3 text-secondary"><i class="fa-solid fa-gavel me-2"></i>Legal Anti-Spam Compliance</h5>
+                    <!-- Physical Address -->
+                    <div class="mb-3">
+                        <label for="physical_address" class="form-label fw-bold small">Business Physical Address:</label>
+                        <textarea class="form-control form-control-sm" id="physical_address" name="PHYSICAL_ADDRESS" rows="2" required>{{ settings.PHYSICAL_ADDRESS }}</textarea>
+                        <div class="form-text x-small text-muted">
+                            Mandatory physical address appended to outreach footer for commercial compliance.
+                        </div>
+                    </div>
+
+                    <h5 class="border-bottom pb-2 mb-3 mt-3 text-secondary"><i class="fa-solid fa-pen-to-square me-2"></i>Outreach Email Templates</h5>
+                    <!-- Subject Template -->
+                    <div class="mb-3">
+                        <label for="default_subject" class="form-label fw-bold small">Default Subject Template:</label>
+                        <input type="text" class="form-control form-control-sm font-monospace" id="default_subject" name="DEFAULT_SUBJECT" value="{{ settings.DEFAULT_SUBJECT }}" required>
+                    </div>
+
+                    <!-- Body Template -->
+                    <div class="mb-3">
+                        <label for="default_body" class="form-label fw-bold small">Default Body Template:</label>
+                        <textarea class="form-control form-control-sm font-monospace" id="default_body" name="DEFAULT_BODY" rows="10" required>{{ settings.DEFAULT_BODY }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2"><i class="fa-solid fa-save me-2"></i>Save Pipeline Configurations</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassVisibility() {
+    const input = document.getElementById('gmail_app_pass');
+    const icon = document.getElementById('eyeIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}

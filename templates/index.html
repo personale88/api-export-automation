@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Dashboard Hero Section -->
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="p-4 p-md-5 text-center rounded-3 bg-white border border-light shadow-sm">
+            <h1 class="display-6 fw-bold text-dark mb-2">
+                <i class="fa-solid fa-earth-americas text-primary me-2" aria-hidden="true"></i>
+                International Buyer Discovery & Export Outreach Hub
+            </h1>
+            <p class="lead col-lg-8 mx-auto text-muted mb-4">
+                Discover verified international buyers across multi-channel APIs, validate emails, run AI lead segmentation, and send compliant Gmail outreach campaigns with product catalog presentation.
+            </p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="#discoverySection" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm" id="heroSearchCta">
+                    <i class="fa-solid fa-magnifying-glass me-2" aria-hidden="true"></i>Search for Buyers
+                </a>
+                <a href="/send" class="btn btn-outline-primary px-4 py-2 fw-semibold" id="heroCampaignCta">
+                    <i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Start New Campaign
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inline Empty-State Onboarding Prompt (Shown when total leads < 5) -->
+{% if buyer_count < 5 %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="alert alert-light border border-info-subtle d-flex align-items-center justify-content-between p-3 rounded-3 shadow-sm">
+            <div class="d-flex align-items-center">
+                <span class="stat-icon bg-stat-leads-subtle text-stat-leads me-3">
+                    <i class="fa-solid fa-compass" aria-hidden="true"></i>
+                </span>
+                <div>
+                    <strong class="text-dark">Ready to discover global buyers?</strong>
+                    <div class="text-muted small">Run your first buyer search to populate this dashboard with verified B2B leads.</div>
+                </div>
+            </div>
+            <a href="#discoverySection" class="btn btn-sm btn-primary text-nowrap ms-3">
+                <i class="fa-solid fa-play me-1" aria-hidden="true"></i>Run Search Now
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Metrics Cards -->
+<div class="row text-center mb-4" id="metricsCards">
+    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+        <div class="stat-card border-top-accent-leads h-100 p-3 shadow-sm d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon bg-stat-leads-subtle text-stat-leads mb-2">
+                    <i class="fa-solid fa-users" aria-hidden="true"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-1 fw-semibold">Total Leads Found</h6>
+                <h2 class="display-6 fw-bold mb-0 text-stat-leads">{{ buyer_count }}</h2>
+            </div>
+            <div class="text-muted x-small mt-2 pt-2 border-top">
+                <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>All time aggregate
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+        <div class="stat-card border-top-accent-biz h-100 p-3 shadow-sm d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon bg-stat-biz-subtle text-stat-biz mb-2">
+                    <i class="fa-solid fa-building" aria-hidden="true"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-1 fw-semibold">Business Contacts</h6>
+                <h2 class="display-6 fw-bold mb-0 text-stat-biz">{{ biz_count }}</h2>
+            </div>
+            <div class="text-muted x-small mt-2 pt-2 border-top">
+                <i class="fa-solid fa-check-circle me-1" aria-hidden="true"></i>Corporate domains
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+        <div class="stat-card border-top-accent-ind h-100 p-3 shadow-sm d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon bg-stat-ind-subtle text-stat-ind mb-2">
+                    <i class="fa-solid fa-user" aria-hidden="true"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-1 fw-semibold">Individual Contacts</h6>
+                <h2 class="display-6 fw-bold mb-0 text-stat-ind">{{ ind_count }}</h2>
+            </div>
+            <div class="text-muted x-small mt-2 pt-2 border-top">
+                <i class="fa-solid fa-envelope me-1" aria-hidden="true"></i>Direct & webmail
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+        <div class="stat-card border-top-accent-opt h-100 p-3 shadow-sm d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon bg-stat-opt-subtle text-stat-opt mb-2">
+                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-1 fw-semibold">Unsubscribes</h6>
+                <h2 class="display-6 fw-bold mb-0 text-stat-opt">{{ opt_count }}</h2>
+            </div>
+            <div class="text-muted x-small mt-2 pt-2 border-top">
+                <i class="fa-solid fa-ban me-1" aria-hidden="true"></i>Suppression list
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Controls & Recent Activity -->
+<div class="row">
+    <!-- Pipeline Controllers -->
+    <div class="col-lg-4 d-flex flex-column">
+        <div class="card shadow-sm mb-4" id="discoverySection">
+            <div class="card-header"><i class="fa-solid fa-play me-2 text-primary" aria-hidden="true"></i>Trigger Discovery Run</div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Run search adapters (Google Scraping + simulated Facebook/LinkedIn/Directory profiles) to find new buyers dealing in <strong>Singing Bowls</strong>.
+                </p>
+                <form action="/run-discovery" method="POST">
+                    <div class="mb-3">
+                        <label for="keyword" class="form-label small fw-bold">Search Keyword:</label>
+                        <input type="text" class="form-control form-control-sm" id="keyword" name="keyword" value="{{ search_keyword }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="max_results" class="form-label small fw-bold">Max Results Per Source:</label>
+                        <select class="form-select form-select-sm" id="max_results" name="max_results">
+                            <option value="3">3 leads</option>
+                            <option value="5" selected>5 leads (Standard)</option>
+                            <option value="10">10 leads (Max)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-sm fw-medium">
+                        <i class="fa-solid fa-magnifying-glass me-2" aria-hidden="true"></i>Start Discovery Pipeline
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4 flex-grow-1">
+            <div class="card-header"><i class="fa-solid fa-circle-info me-2 text-primary" aria-hidden="true"></i>Pipeline Quick Status</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Sending Account:
+                        <span class="badge bg-secondary font-monospace">{{ gmail_email if gmail_email else 'Not Configured' }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Sending Engine:
+                        {% if smtp_configured %}
+                        <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i> Gmail SMTP (Active)</span>
+                        {% elif oauth_configured %}
+                        <span class="badge bg-success"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i> Configured (OAuth2)</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i> Simulation Mode</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Gemini Classifier:
+                        {% if has_gemini_key %}
+                        <span class="badge bg-success"><i class="fa-solid fa-check me-1" aria-hidden="true"></i> Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Rule Heuristics</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Daily Outreach Limit:
+                        <span class="badge bg-primary font-monospace">{{ daily_limit }} / day</span>
+                    </li>
+                    <li class="list-group-item px-0 pt-3">
+                        <a href="/api-docs" class="btn btn-outline-dark btn-sm w-100">
+                            <i class="fa-solid fa-code me-1" aria-hidden="true"></i> Open REST API Explorer
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Leads Found (Height Balanced Grid) -->
+    <div class="col-lg-8 d-flex flex-column">
+        <div class="card shadow-sm mb-4 h-100 d-flex flex-column">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-list me-2 text-primary" aria-hidden="true"></i>Recently Discovered Leads</span>
+                <span class="badge bg-light text-dark border font-monospace">{{ recent_buyers|length }} shown</span>
+            </div>
+            <div class="card-body p-0 d-flex flex-column flex-grow-1">
+                <div class="table-responsive flex-grow-1" style="min-height: 280px; max-height: 480px;">
+                    <table class="table table-hover table-striped mb-0 text-nowrap align-middle">
+                        <thead class="table-light">
+                            <tr class="small text-uppercase">
+                                <th>Name / Company</th>
+                                <th>Email</th>
+                                <th>Country</th>
+                                <th>Provenance / Source</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% if recent_buyers %}
+                                {% for buyer in recent_buyers %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ buyer.buyer_name }}</strong><br>
+                                        <span class="text-muted">{{ buyer.company_name }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="font-monospace text-dark">{{ buyer.email }}</span><br>
+                                        {% if buyer.website %}
+                                        <a href="{{ buyer.website }}" target="_blank" rel="noopener noreferrer" class="text-stat-leads text-decoration-none x-small">
+                                            <i class="fa-solid fa-link me-1" aria-hidden="true"></i>Visit website
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-globe me-1" aria-hidden="true"></i>{{ buyer.country }}</span></td>
+                                    <td>
+                                        <span class="badge {% if buyer.source_platform == 'Google' %}bg-primary{% elif buyer.source_platform == 'Facebook' %}bg-info text-dark{% elif buyer.source_platform == 'LinkedIn' %}bg-secondary{% else %}bg-dark{% endif %}">
+                                            {{ buyer.source_platform }}
+                                        </span>
+                                    </td>
+                                    <td><span class="text-muted">{{ buyer.discovered_date.split(' ')[0] }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fa-solid fa-folder-open display-6 mb-2 d-block" aria-hidden="true"></i>
+                                        No buyer leads collected yet. Trigger a discovery run!
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Card Footer: Sourcing Distribution & Status Overview (Eliminates below-the-fold empty space) -->
+            <div class="card-footer bg-light py-2 px-3 border-top">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 small text-muted">
+                    <div>
+                        <i class="fa-solid fa-filter me-1 text-secondary" aria-hidden="true"></i>
+                        <span>Sourcing Channels:</span>
+                        <span class="badge bg-primary ms-1">Google</span>
+                        <span class="badge bg-info text-dark ms-1">Facebook</span>
+                        <span class="badge bg-secondary ms-1">LinkedIn</span>
+                        <span class="badge bg-dark ms-1">Directory</span>
+                    </div>
+                    <div>
+                        <a href="/upload" class="text-stat-leads text-decoration-none fw-semibold">
+                            View All {{ buyer_count }} Leads <i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

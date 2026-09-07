@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-11 mx-auto">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h4 class="fw-bold mb-0">REST API</h4>
+      </div>
+      <span class="badge bg-success">v1 live</span>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <span><span class="badge bg-primary me-2">GET</span><code>/api/buyers</code></span>
+      </div>
+      <div class="card-body py-2">
+        <div class="row g-2 mb-2">
+          <div class="col-md-3">
+            <input type="text" id="buyerKw" class="form-control form-control-sm font-monospace" placeholder="Keyword">
+          </div>
+          <div class="col-md-3">
+            <input type="text" id="buyerCountry" class="form-control form-control-sm font-monospace" placeholder="Country">
+          </div>
+          <div class="col-md-3">
+            <input type="text" id="buyerPlatform" class="form-control form-control-sm font-monospace" placeholder="Platform">
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-sm btn-primary w-100" onclick="fetchBuyers()">Send</button>
+          </div>
+        </div>
+        <div class="bg-dark text-light p-2 rounded font-monospace small" style="max-height: 200px; overflow-y: auto;">
+          <pre id="buyerRes" class="mb-0 text-info">// response</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <span><span class="badge bg-success me-2">POST</span><code>/api/buyers/search</code></span>
+      </div>
+      <div class="card-body py-2">
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">
+            <input type="text" id="searchKw" class="form-control form-control-sm font-monospace" value="Singing Bowls" placeholder="Keyword">
+          </div>
+          <div class="col-md-3">
+            <input type="number" id="searchMax" class="form-control form-control-sm font-monospace" value="3" min="1" max="10">
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-sm btn-success w-100" id="btnSearch" onclick="runDiscovery()">Search</button>
+          </div>
+        </div>
+        <div class="bg-dark text-light p-2 rounded font-monospace small" style="max-height: 200px; overflow-y: auto;">
+          <pre id="searchRes" class="mb-0 text-info">// response</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <span><span class="badge bg-warning text-dark me-2">POST</span><code>/api/email/test</code></span>
+      </div>
+      <div class="card-body py-2">
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">
+            <input type="email" id="targetEmail" class="form-control form-control-sm font-monospace" value="{{ gmail_email }}" placeholder="Recipient">
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-sm btn-warning w-100" id="btnSendTest" onclick="sendTestEmail()">Send Test</button>
+          </div>
+        </div>
+        <div class="bg-dark text-light p-2 rounded font-monospace small" style="max-height: 200px; overflow-y: auto;">
+          <pre id="emailRes" class="mb-0 text-info">// response</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <span><span class="badge bg-info text-dark me-2">GET</span><code>/api/stats</code></span>
+      </div>
+      <div class="card-body py-2">
+        <button class="btn btn-sm btn-outline-info mb-2" onclick="loadStats()">Fetch Stats</button>
+        <div class="bg-dark text-light p-2 rounded font-monospace small" style="max-height: 180px; overflow-y: auto;">
+          <pre id="statsRes" class="mb-0 text-info">// response</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white py-2 small fw-semibold">Example (Python requests)</div>
+      <div class="card-body p-2">
+        <pre class="bg-light p-2 rounded small font-monospace text-dark mb-0"><code>import requests
+
+BASE_URL = "http://127.0.0.1:5000"
+
+res = requests.post(f"{BASE_URL}/api/buyers/search", json={"keyword": "Singing Bowls", "max_results": 5}).json()
+print("Added:", res.get("new_leads_added"))
+
+buyers = requests.get(f"{BASE_URL}/api/buyers", params={"country": "United States"}).json()
+print("Count:", len(buyers.get("buyers", [])))
+
+email_res = requests.post(f"{BASE_URL}/api/email/test", json={"recipient": "user@example.com"}).json()
+print("Status:", email_res)</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function fetchBuyers() {
+  const kw = document.getElementById('buyerKw').value;
+  const country = document.getElementById('buyerCountry').value;
+  const platform = document.getElementById('buyerPlatform').value;
+  const out = document.getElementById('buyerRes');
+  out.textContent = "Loading...";
+
+  // TODO: add pagination params if lead count grows
+  const url = `/api/buyers?keyword=${encodeURIComponent(kw)}&country=${encodeURIComponent(country)}&platform=${encodeURIComponent(platform)}&limit=10`;
+  fetch(url)
+    .then(r => r.json())
+    .then(data => { out.textContent = JSON.stringify(data, null, 2); })
+    .catch(err => { out.textContent = "Error: " + err; });
+}
+
+function runDiscovery() {
+  const kw = document.getElementById('searchKw').value;
+  const max = document.getElementById('searchMax').value;
+  const btn = document.getElementById('btnSearch');
+  const out = document.getElementById('searchRes');
+
+  btn.disabled = true;
+  btn.textContent = "Searching...";
+  out.textContent = "Querying search adapters...";
+
+  fetch('/api/buyers/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keyword: kw, max_results: parseInt(max) || 3 })
+  })
+  .then(r => r.json())
+  .then(data => { out.textContent = JSON.stringify(data, null, 2); })
+  .catch(err => { out.textContent = "Error: " + err; })
+  .finally(() => {
+    btn.disabled = false;
+    btn.textContent = "Search";
+  });
+}
+
+function sendTestEmail() {
+  const target = document.getElementById('targetEmail').value;
+  const btn = document.getElementById('btnSendTest');
+  const out = document.getElementById('emailRes');
+
+  btn.disabled = true;
+  btn.textContent = "Sending...";
+  out.textContent = "Connecting to SMTP...";
+
+  fetch('/api/email/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipient: target })
+  })
+  .then(r => r.json())
+  .then(data => { out.textContent = JSON.stringify(data, null, 2); })
+  .catch(err => { out.textContent = "Error: " + err; })
+  .finally(() => {
+    btn.disabled = false;
+    btn.textContent = "Send Test";
+  });
+}
+
+function loadStats() {
+  const out = document.getElementById('statsRes');
+  out.textContent = "Loading...";
+  fetch('/api/stats')
+    .then(r => r.json())
+    .then(data => { out.textContent = JSON.stringify(data, null, 2); })
+    .catch(err => { out.textContent = "Error: " + err; });
+}
+</script>
+{% endblock %}
