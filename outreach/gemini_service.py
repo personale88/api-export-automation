@@ -49,10 +49,17 @@ def classify_emails_with_gemini(emails):
 
     try:
         print(f"[Gemini AI] Classifying batch of {len(emails)} emails with Gemini...")
-        try:
-            response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-        except Exception:
-            response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+        model_candidates = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']
+        response = None
+        for model_name in model_candidates:
+            try:
+                response = client.models.generate_content(model=model_name, contents=prompt)
+                if response and response.text:
+                    break
+            except Exception:
+                continue
+        if not response or not response.text:
+            raise RuntimeError("All Gemini model candidates failed.")
             
         raw_text = response.text.strip()
         if raw_text.startswith("```json"):
@@ -107,11 +114,21 @@ def generate_export_pitch_with_gemini(buyer_name="Purchasing Manager", company_n
 
     try:
         print(f"[Gemini AI] Generating personalized export outreach pitch for {company_name}...")
-        try:
-            response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-        except Exception:
-            response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
-            
+        model_candidates = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']
+        response = None
+        used_model = 'gemini-3.6-flash'
+        for model_name in model_candidates:
+            try:
+                response = client.models.generate_content(model=model_name, contents=prompt)
+                if response and response.text:
+                    used_model = model_name
+                    break
+            except Exception:
+                continue
+
+        if not response or not response.text:
+            raise RuntimeError("All Gemini model candidates failed for pitch generation.")
+
         text = response.text.strip()
         subject = f"Wholesale {product_name} Partnership — {company_name}"
         body = text
@@ -122,7 +139,7 @@ def generate_export_pitch_with_gemini(buyer_name="Purchasing Manager", company_n
             body = parts[1].strip()
 
         return {
-            "source": "Google Gemini AI (gemini-2.5-flash)",
+            "source": f"Google Gemini AI ({used_model})",
             "subject": subject,
             "body": body
         }

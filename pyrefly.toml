@@ -1,0 +1,6 @@
+# Pyrefly configuration
+[errors]
+unresolved-import = "ignore"
+missing-module = "ignore"
+import-error = "ignore"
+undefined-variable = "ignore"

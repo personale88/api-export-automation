@@ -1,5 +1,5 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # type: ignore # pyrefly: ignore
 import re
 import urllib.parse
 
