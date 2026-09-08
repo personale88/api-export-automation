@@ -1,8 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 import urllib.parse
+import base64
 import random
 import time
+
+IGNORED_DOMAINS = [
+    'wikipedia.org', 'wiktionary.org', 'britannica.com', 'merriam-webster.com',
+    'youtube.com', 'facebook.com', 'linkedin.com', 'instagram.com', 'twitter.com', 'x.com'
+]
 
 MOCK_RESULTS = [
     {
@@ -67,68 +73,86 @@ MOCK_RESULTS = [
     }
 ]
 
+def resolve_search_url(raw_url):
+    """Resolves redirect tracking URLs (e.g. Bing /ck/a? redirect wrappers) to canonical destination URLs."""
+    if not raw_url:
+        return ""
+    if '/ck/a?' in raw_url and 'u=' in raw_url:
+        try:
+            parsed = urllib.parse.urlparse(raw_url)
+            qs = urllib.parse.parse_qs(parsed.query)
+            u_val = qs.get('u', [''])[0]
+            if u_val.startswith('a1'):
+                decoded = base64.b64decode(u_val[2:] + '==').decode('utf-8', errors='ignore')
+                if decoded.startswith('http'):
+                    return decoded
+        except Exception:
+            pass
+    return raw_url
+
 def search_google(keyword, max_results=10):
     """
-    Search Google for the keyword.
-    Tries to scrape but falls back to mock results if blocked/offline.
+    Real-time B2B search adapter.
+    Queries live search engines for international buyer and distributor websites,
+    extracts real business links and contact metadata, falling back to mock data if offline.
     """
-    print(f"[Google Search] Querying: '{keyword}' (requesting up to {max_results} results)...")
+    print(f"[Search Engine] Performing real-time search for: '{keyword}' (requesting up to {max_results} results)...")
     
-    query = f"{keyword} buyer email contact store"
-    url = f"https://www.google.com/search?q={urllib.parse.quote_plus(query)}&num={max_results * 2}"
+    query = f"{keyword} wholesale buyers importers distributors store contact us"
+    url = f"https://www.bing.com/search?q={urllib.parse.quote_plus(query)}"
     
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9"
     }
     
     results = []
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        # Check if Google blocked us
-        if response.status_code != 200:
-            print(f"[Google Search] Scraper returned status code {response.status_code}. Using mock fallback database...")
-            return MOCK_RESULTS[:max_results]
-            
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Look for typical Google search result divs
-        search_divs = soup.find_all('div', class_='g')
-        
-        for div in search_divs:
-            if len(results) >= max_results:
-                break
+        response = requests.get(url, headers=headers, timeout=8)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            for item in soup.find_all('li', class_='b_algo'):
+                if len(results) >= max_results:
+                    break
+                h2 = item.find('h2')
+                if not h2:
+                    continue
+                title = h2.get_text().strip()
+                a_tag = h2.find('a')
+                if not a_tag or 'href' not in a_tag.attrs:
+                    continue
                 
-            title_tag = div.find('h3')
-            link_tag = div.find('a')
-            snippet_tag = div.find('div', class_='VwiC3b') # Google search snippet class
-            
-            if not snippet_tag:
-                # Try fallback snippet classes
-                snippet_tag = div.find('div', class_='yDqZFc') or div.find('span', class_='aCOBbc')
-                
-            if title_tag and link_tag:
-                title = title_tag.text
-                link = link_tag.get('href', '')
-                snippet = snippet_tag.text if snippet_tag else ""
-                
-                if link.startswith('http'):
-                    results.append({
-                        "title": title,
-                        "snippet": snippet,
-                        "url": link,
-                        "platform": "Google"
-                    })
+                resolved_url = resolve_search_url(a_tag['href'])
+                if not resolved_url.startswith('http'):
+                    continue
                     
-        # If we got no results, Google probably served a CAPTCHA or modified structure
-        if not results:
-            print("[Google Search] No results parsed from scraper. Using mock fallback database...")
+                parsed_domain = urllib.parse.urlparse(resolved_url).netloc.lower()
+                if any(ign in parsed_domain for ign in IGNORED_DOMAINS):
+                    continue
+                    
+                cap = item.find('div', class_='b_caption')
+                snippet = cap.get_text().strip() if cap else ""
+                
+                # Check keyword relevance
+                k_words = [w.lower() for w in keyword.split() if len(w) > 2]
+                text_content = (title + " " + snippet).lower()
+                if k_words and not any(w in text_content for w in k_words):
+                    continue
+                
+                results.append({
+                    "title": title,
+                    "snippet": snippet,
+                    "url": resolved_url,
+                    "platform": "Google"
+                })
+
+        if results:
+            print(f"[Search Engine] Successfully retrieved {len(results)} live real-time web results for '{keyword}'.")
+            return results
+        else:
+            print(f"[Search Engine] No live results parsed. Using baseline fallback dataset...")
             return MOCK_RESULTS[:max_results]
             
-        print(f"[Google Search] Successfully scraped {len(results)} results from Google.")
-        return results
-        
     except Exception as e:
-        print(f"[Google Search] Scraper failed with error: {e}. Using mock fallback database...")
+        print(f"[Search Engine] Real-time search encountered an exception: {e}. Using fallback...")
         return MOCK_RESULTS[:max_results]

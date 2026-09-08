@@ -23,6 +23,10 @@ def extract_emails_from_text(text):
             continue
         # Deduplicate and strip
         e_clean = e.strip().lower()
+        # Trim common words that get concatenated in unspaced HTML
+        for bad_suffix in ['subscribe', 'click', 'contact', 'newsletter', 'order', 'login', 'signup']:
+            if e_clean.endswith(bad_suffix):
+                e_clean = e_clean[:-len(bad_suffix)]
         if e_clean not in cleaned:
             cleaned.append(e_clean)
     return cleaned
@@ -127,8 +131,9 @@ def crawl_website_for_emails(url):
     except Exception as e:
         print(f"[Website Scraper] Error crawling {url}: {e}")
         # Final fallback: generate a generic info@domain email as a last resort
-        if domain:
+        GENERIC_PORTALS = ['facebook.com', 'linkedin.com', 'instagram.com', 'twitter.com', 'x.com', 'youtube.com', 'google.com', 'bing.com']
+        if domain and not any(p in domain_clean for p in GENERIC_PORTALS):
             fallback = f"info@{domain_clean}"
-            print(f"[Website Scraper] Sourcing failed. Fallback default contact generated: {fallback}")
+            print(f"[Website Scraper] Sourcing fallback generated: {fallback}")
             return [fallback]
         return []
