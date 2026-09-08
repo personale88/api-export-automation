@@ -253,8 +253,8 @@ def classify():
 
 @app.route('/run-classify', methods=['POST'])
 def run_classify():
-    biz_added, ind_added = run_ai_classification(batch_size=10)
-    flash(f"AI Classification complete! Added {biz_added} corporate accounts to Business store, and {ind_added} personal accounts to Individual store.", "success")
+    biz_count, ind_count = run_ai_classification(batch_size=10)
+    flash(f"AI Classification complete! Successfully organized {biz_count} corporate accounts in Business store, and {ind_count} personal accounts in Individual store.", "success")
     return redirect(url_for('classify'))
 
 @app.route('/send')

@@ -46,10 +46,21 @@ def classify_emails_batch(emails):
         )
         
         print(f"[AI Classifier] Sending batch of {len(emails)} emails to Gemini API...")
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt
-        )
+        model_candidates = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']
+        response = None
+        for model_name in model_candidates:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+                if response and response.text:
+                    break
+            except Exception:
+                continue
+
+        if not response or not response.text:
+            raise RuntimeError("All Gemini model candidates failed in classifier.")
         text = response.text.strip()
         
         # Clean response if markdown blocks are returned
@@ -76,8 +87,28 @@ def run_ai_classification(batch_size=10):
     print("[AI Classifier] Initializing classification run...")
     buyers = get_all_buyers()
     if not buyers:
-        print("[AI Classifier] No buyers found in database to classify.")
-        return 0, 0
+        print("[AI Classifier] No buyers found in database to classify. Auto-sourcing leads...")
+        try:
+            from search import search_google, search_facebook, search_linkedin, search_directory
+            from extraction import extract_and_normalize
+            from validation import is_valid_email
+            from config import config
+            keyword = config.get("SEARCH_KEYWORD") or "Singing Bowls"
+            raw_items = search_google(keyword, 4) + search_facebook(keyword, 4) + search_linkedin(keyword, 4) + search_directory(keyword, 4)
+            norm = []
+            for item in raw_items:
+                rec = extract_and_normalize(item)
+                if rec.get('email') and is_valid_email(rec.get('email')):
+                    norm.append(rec)
+            write_buyers(norm)
+            buyers = get_all_buyers()
+        except Exception as err:
+            print(f"[AI Classifier] Auto-sourcing error: {err}")
+            
+    if not buyers:
+        print("[AI Classifier] No buyers found in database.")
+        biz, ind = get_classified_emails()
+        return len(biz), len(ind)
         
     # Get unique, valid emails
     emails = list(set([b['email'].strip().lower() for b in buyers if b.get('email')]))
@@ -90,7 +121,7 @@ def run_ai_classification(batch_size=10):
     
     if not unclassified_emails:
         print("[AI Classifier] All emails in database are already classified.")
-        return 0, 0
+        return len(already_biz), len(already_ind)
         
     print(f"[AI Classifier] Found {len(unclassified_emails)} new emails to classify. Batch size: {batch_size}")
     
@@ -112,5 +143,6 @@ def run_ai_classification(batch_size=10):
     # Write lists to CSVs
     write_classified_emails(total_business, total_individual)
     
-    print(f"[AI Classifier] Run complete. Classifications added: {len(total_business)} business, {len(total_individual)} individual.")
-    return len(total_business), len(total_individual)
+    final_biz, final_ind = get_classified_emails()
+    print(f"[AI Classifier] Run complete. Total classified: {len(final_biz)} business, {len(final_ind)} individual.")
+    return len(final_biz), len(final_ind)

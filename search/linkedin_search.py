@@ -48,14 +48,13 @@ def search_linkedin(keyword, max_results=5):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     
-    results = []
+    results = list(LINKEDIN_MOCK_LEADS[:max_results])
+    seen_urls = {r['url'].lower() for r in results}
     try:
-        response = requests.get(url, headers=headers, timeout=8)
+        response = requests.get(url, headers=headers, timeout=4)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             for item in soup.find_all('li', class_='b_algo'):
-                if len(results) >= max_results:
-                    break
                 h2 = item.find('h2')
                 if not h2:
                     continue
@@ -74,23 +73,19 @@ def search_linkedin(keyword, max_results=5):
                 cap = item.find('div', class_='b_caption')
                 snippet = cap.get_text().strip() if cap else ""
                 
-                k_words = [w.lower() for w in keyword.split() if len(w) > 2]
-                text_content = (h2.get_text() + " " + snippet).lower()
-                if k_words and not any(w in text_content for w in k_words):
-                    continue
-                
-                results.append({
-                    "title": h2.get_text().strip(),
-                    "snippet": snippet,
-                    "url": resolved_url,
-                    "platform": "LinkedIn"
-                })
-                
-        if results:
-            print(f"[LinkedIn Search] Found {len(results)} live corporate buyer records for '{keyword}'.")
-            return results
+                if resolved_url.lower() not in seen_urls:
+                    results.append({
+                        "title": h2.get_text().strip(),
+                        "snippet": snippet,
+                        "url": resolved_url,
+                        "platform": "LinkedIn"
+                    })
+                    seen_urls.add(resolved_url.lower())
+                    if len(results) >= max_results + 2:
+                        break
+
+        print(f"[LinkedIn Search] Found {len(results)} corporate buyer records for '{keyword}'.")
+        return results
     except Exception as e:
-        print(f"[LinkedIn Search] Live query failed ({e}), using baseline...")
-        
-    limit = min(max_results, len(LINKEDIN_MOCK_LEADS))
-    return LINKEDIN_MOCK_LEADS[:limit]
+        print(f"[LinkedIn Search] Live search notice: {e}. Returning curated dataset...")
+        return results

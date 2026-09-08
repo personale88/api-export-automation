@@ -21,13 +21,14 @@ def extract_emails_from_text(text):
         # Ignore files disguised as emails
         if any(e.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.zip']):
             continue
-        # Deduplicate and strip
-        e_clean = e.strip().lower()
+        # Deduplicate and strip punctuation (e.g. trailing sentence dots)
+        e_clean = e.strip(" \t\n\r.,;:!?()[]{}'\"").lower()
         # Trim common words that get concatenated in unspaced HTML
         for bad_suffix in ['subscribe', 'click', 'contact', 'newsletter', 'order', 'login', 'signup']:
             if e_clean.endswith(bad_suffix):
                 e_clean = e_clean[:-len(bad_suffix)]
-        if e_clean not in cleaned:
+        e_clean = e_clean.strip(" \t\n\r.,;:!?()[]{}'\"")
+        if e_clean and e_clean not in cleaned:
             cleaned.append(e_clean)
     return cleaned
 
