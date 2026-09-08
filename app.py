@@ -558,6 +558,24 @@ def api_send_campaign():
         "campaign_result": result
     })
 
+@app.route('/api/generate-pitch', methods=['POST'])
+def api_generate_pitch():
+    """Generates an AI personalized B2B export pitch using Gemini."""
+    from outreach.gemini_service import generate_export_pitch_with_gemini
+    data = request.get_json(silent=True) or request.form
+    buyer_name = data.get('buyer_name', 'Purchasing Manager')
+    company_name = data.get('company_name', 'Partner Company')
+    product_name = data.get('product_name', config.get('SEARCH_KEYWORD', 'Singing Bowls'))
+    country = data.get('country', 'United States')
+    
+    pitch = generate_export_pitch_with_gemini(
+        buyer_name=buyer_name,
+        company_name=company_name,
+        product_name=product_name,
+        country=country
+    )
+    return jsonify(pitch)
+
 @app.route('/api/stats', methods=['GET'])
 def api_get_stats():
     """GET /api/stats: Overview metrics."""

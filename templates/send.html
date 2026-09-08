@@ -97,10 +97,18 @@
 
                     <!-- Email Body Template -->
                     <div class="mb-3">
-                        <label for="body" class="form-label fw-bold small">Email Body Template:</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="body" class="form-label fw-bold small mb-0">Email Body Template:</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.8rem;" id="btnAiPitch" onclick="generateAiPitch()">
+                                <i class="fa-solid fa-wand-magic-sparkles me-1 text-warning"></i> Generate Pitch with Gemini AI
+                            </button>
+                        </div>
                         <textarea class="form-control font-monospace text-dark" id="body" name="body" rows="9" required>{{ default_body }}</textarea>
-                        <div class="form-text x-small text-muted">
-                            Supported tags: <code>{buyer_name}</code>, <code>{company_name}</code>, <code>{source_platform}</code>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="form-text x-small text-muted">
+                                Supported tags: <code>{buyer_name}</code>, <code>{company_name}</code>, <code>{source_platform}</code>
+                            </span>
+                            <span id="aiPitchSourceBadge" class="badge bg-light text-secondary border font-monospace x-small" style="display: none;"></span>
                         </div>
                     </div>
                     
@@ -132,6 +140,43 @@
 </div>
 
 <script>
+function generateAiPitch() {
+    const btn = document.getElementById('btnAiPitch');
+    const originalText = btn.innerHTML;
+    const badge = document.getElementById('aiPitchSourceBadge');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Writing Pitch...';
+
+    fetch('/api/generate-pitch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            buyer_name: '{buyer_name}',
+            company_name: '{company_name}'
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.subject) {
+            document.getElementById('subject').value = data.subject;
+        }
+        if (data.body) {
+            document.getElementById('body').value = data.body;
+        }
+        if (data.source) {
+            badge.style.display = 'inline-block';
+            badge.textContent = '⚡ ' + data.source;
+        }
+    })
+    .catch(err => {
+        alert('Error generating pitch: ' + err);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
 document.getElementById('campaignForm').addEventListener('submit', function() {
     document.getElementById('btnText').style.display = 'none';
     document.getElementById('btnSpinner').style.display = 'inline-block';

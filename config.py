@@ -84,8 +84,13 @@ class AppConfig:
         except Exception as e:
             print(f"Error saving settings.json: {e}")
 
-    def get(self, key):
-        return self.settings.get(key, DEFAULT_SETTINGS.get(key))
+    def get(self, key, default=None):
+        val = self.settings.get(key)
+        if val is not None and val != "":
+            return val
+        if default is not None:
+            return default
+        return DEFAULT_SETTINGS.get(key, default)
 
     def update(self, new_settings):
         # Update internally
