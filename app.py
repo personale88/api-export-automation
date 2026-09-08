@@ -122,7 +122,16 @@ def run_discovery():
     # 4. Write to buyers database
     new_leads_added = write_buyers(normalized_records)
     
-    flash(f"Discovery complete! Found {len(aggregated_raw)} listings across sources. Added {new_leads_added} new valid leads to database.", "success")
+    if new_leads_added > 0:
+        flash(f"Discovery complete! Sourced {len(aggregated_raw)} listings across sources. Added {new_leads_added} new verified leads to database.", "success")
+    else:
+        flash(f"Discovery complete! Found {len(aggregated_raw)} listings, but these leads already exist in your database (duplicates skipped). Check the leads table below or search a new keyword!", "info")
+    return redirect(url_for('index'))
+
+@app.route('/reset-leads', methods=['POST'])
+def reset_leads():
+    clear_database()
+    flash("Leads database cleared. You can now run a fresh discovery pipeline!", "info")
     return redirect(url_for('index'))
 
 @app.route('/upload')

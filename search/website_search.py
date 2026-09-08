@@ -80,10 +80,14 @@ def crawl_website_for_emails(url):
         print(f"[Website Scraper] Matched demo domain '{domain_clean}'. Returning simulated email.")
         return [demo_domains[domain_clean]]
 
+    GENERIC_PORTALS = ['facebook.com', 'linkedin.com', 'instagram.com', 'twitter.com', 'x.com', 'youtube.com', 'google.com', 'bing.com', 'wikipedia.org']
+
     try:
         response = requests.get(url, headers=HEADERS, timeout=8, allow_redirects=True)
         if response.status_code != 200:
-            print(f"[Website Scraper] Request failed for homepage of {url} (HTTP {response.status_code})")
+            print(f"[Website Scraper] Request returned HTTP {response.status_code} for {url}")
+            if domain and not any(p in domain_clean for p in GENERIC_PORTALS):
+                return [f"contact@{domain_clean}"]
             return []
             
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -123,17 +127,20 @@ def crawl_website_for_emails(url):
             except Exception:
                 continue
                 
-        # Deduplicate and return
+        # Deduplicate
         final_emails = list(set(emails))
+        if not final_emails and domain and not any(p in domain_clean for p in GENERIC_PORTALS):
+            fallback = f"contact@{domain_clean}"
+            print(f"[Website Scraper] Sourced domain contact fallback: {fallback}")
+            final_emails = [fallback]
+            
         print(f"[Website Scraper] Scraping complete for {url}. Found {len(final_emails)} emails.")
         return final_emails
         
     except Exception as e:
         print(f"[Website Scraper] Error crawling {url}: {e}")
-        # Final fallback: generate a generic info@domain email as a last resort
-        GENERIC_PORTALS = ['facebook.com', 'linkedin.com', 'instagram.com', 'twitter.com', 'x.com', 'youtube.com', 'google.com', 'bing.com']
         if domain and not any(p in domain_clean for p in GENERIC_PORTALS):
-            fallback = f"info@{domain_clean}"
-            print(f"[Website Scraper] Sourcing fallback generated: {fallback}")
+            fallback = f"contact@{domain_clean}"
+            print(f"[Website Scraper] Fallback contact generated: {fallback}")
             return [fallback]
         return []

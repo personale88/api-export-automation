@@ -7,7 +7,9 @@ import time
 
 IGNORED_DOMAINS = [
     'wikipedia.org', 'wiktionary.org', 'britannica.com', 'merriam-webster.com',
-    'youtube.com', 'facebook.com', 'linkedin.com', 'instagram.com', 'twitter.com', 'x.com'
+    'youtube.com', 'facebook.com', 'linkedin.com', 'instagram.com', 'twitter.com', 'x.com',
+    'sciencenotes.org', 'scienceinfo.com', 'explainthatstuff.com', 'quora.com', 'reddit.com',
+    'pinterest.com', 'dictionary.com'
 ]
 
 MOCK_RESULTS = [

@@ -43,7 +43,7 @@ def search_directory(keyword, max_results=5):
     """
     print(f"[Directory Search] Querying live business directories for: '{keyword}'...")
     query = f"{keyword} wholesale suppliers directory b2b trade leads"
-    url = f"https://www.bing.com/search?q={urllib.parse.quote_plus(query)}"
+    url = f"https://www.bing.com/search?q={urllib.parse.quote_plus(query)}&first=11"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }

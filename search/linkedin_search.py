@@ -43,7 +43,7 @@ def search_linkedin(keyword, max_results=5):
     """
     print(f"[LinkedIn Search] Querying live corporate trade network for: '{keyword}'...")
     query = f"{keyword} corporate wholesale importers distributors procurement contact email"
-    url = f"https://www.bing.com/search?q={urllib.parse.quote_plus(query)}"
+    url = f"https://www.bing.com/search?q={urllib.parse.quote_plus(query)}&first=21"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }

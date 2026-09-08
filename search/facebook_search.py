@@ -43,7 +43,7 @@ def search_facebook(keyword, max_results=5):
     """
     print(f"[Facebook Search] Querying live retail & boutique network for: '{keyword}'...")
     query = f"{keyword} retail store shop boutique wholesale supplier contact email"
-    url = f"https://www.bing.com/search?q={urllib.parse.quote_plus(query)}"
+    url = f"https://www.bing.com/search?q={urllib.parse.quote_plus(query)}&first=31"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
